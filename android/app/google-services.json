@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "16617969244",
+    "project_id": "echo-attendance-app",
+    "storage_bucket": "echo-attendance-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16617969244:android:37d652f844d460d581b899",
+        "android_client_info": {
+          "package_name": "com.example.attendify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwSpoPkY2Qei7lca4nG86aNrxCmb5YqLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16617969244:android:6831fe713aea76ed81b899",
+        "android_client_info": {
+          "package_name": "com.example.echo75"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwSpoPkY2Qei7lca4nG86aNrxCmb5YqLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16617969244:android:ca06968f66cc840c81b899",
+        "android_client_info": {
+          "package_name": "com.example.echo_v1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwSpoPkY2Qei7lca4nG86aNrxCmb5YqLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
