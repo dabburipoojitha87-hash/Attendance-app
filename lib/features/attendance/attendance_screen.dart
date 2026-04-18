@@ -21,18 +21,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Map<String, String> attendanceIdMap = {};
   Map<String, List<Map<String, dynamic>>> subjectAttendanceHistory = {};
 
-  // ================= THEME =================
+  // Date range filter
+  DateTime? filterStart;
+  DateTime? filterEnd;
 
-  static const bgBlack = Color(0xFF0E0E11);
-
-  static const cardStart = Color(0xFF1C1C24);
-  static const cardEnd = Color(0xFF2A2A36);
-
-  static const borderColor = Color(0xFF2F2F3A);
-
+  // ─── Color Palette (Pink & Black theme) ───────────────────────────────────
+  static const bgBlack = Color(0xFF0A0A0D);
+  static const cardStart = Color(0xFF141418);
+  static const cardEnd = Color(0xFF1E1E25);
+  static const borderColor = Color(0xFF2A2A35);
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFB8B8C7);
+  static const textSecondary = Color(0xFFAAAAAB);
 
+  // Pink accent (primary)
+  static const pink = Color(0xFFFF2D78);
+  static const pinkLight = Color(0xFFFF6BA0);
+  static const pinkDark = Color(0xFFBF1A55);
+  static const pinkSurface = Color(0xFF2A0F1A);
+
+  // Status colours
   static const success = Color(0xFF7BD3A8);
   static const warning = Color(0xFFF4C06A);
   static const error = Color(0xFFE57373);
@@ -43,13 +50,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     fetchData();
   }
 
-  // ================= DATE =================
-
   String getIndianWeekday() {
     final now = DateTime.now().toUtc().add(
       const Duration(hours: 5, minutes: 30),
     );
-
     return [
       'Monday',
       'Tuesday',
@@ -60,8 +64,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     ][now.weekday - 1];
   }
 
-  // ================= FETCH =================
-
   Future<void> fetchData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -71,16 +73,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final weekday = getIndianWeekday();
     final todayDate = DateTime.now().toIso8601String().split('T')[0];
 
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(
-      now.year,
-      now.month + 1,
-      1,
-    ).subtract(const Duration(seconds: 1));
-
     try {
-      /// 1️⃣ Timetable (unchanged)
       final timetable = await supabase
           .from('timetable')
           .select('id, time_slot, subjects!fk_subject(*)')
@@ -88,29 +81,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           .eq('day', weekday)
           .order('time_slot', ascending: true);
 
-      /// 2️⃣ Subjects (unchanged)
+      final overrides = await supabase
+          .from('timetable_overrides')
+          .select('time_slot, subjects(*)')
+          .eq('user_id', user.uid)
+          .eq('date', todayDate)
+          .eq('day', weekday);
+
+      final Map<int, dynamic> overrideMap = {};
+      for (var o in overrides) {
+        overrideMap[o['time_slot'] as int] = o['subjects'];
+      }
+
+      final List mergedTimetable = timetable.map((item) {
+        final slot = item['time_slot'] as int;
+        if (overrideMap.containsKey(slot)) {
+          return {
+            ...Map<String, dynamic>.from(item),
+            'subjects': overrideMap[slot],
+            'is_override': true,
+          };
+        }
+        return {...Map<String, dynamic>.from(item), 'is_override': false};
+      }).toList();
+
       final subjects = await supabase
           .from('subjects')
           .select('id, name, type')
           .eq('user_id', user.uid);
 
-      /// 3️⃣ ALL-TIME THEORY (for overall)
       final overallData = await supabase
           .from('attendance')
           .select('subject_id, present, date, time_slot, type')
           .eq('user_id', user.uid)
           .eq('type', 'Theory');
 
-      /// 4️⃣ MONTH THEORY (for monthly)
-      final monthlyData = await supabase
-          .from('attendance')
-          .select('subject_id, present, date, time_slot, type')
-          .eq('user_id', user.uid)
-          .eq('type', 'Theory')
-          .gte('date', startOfMonth.toIso8601String())
-          .lte('date', endOfMonth.toIso8601String());
-
-      /// 5️⃣ TODAY (for toggles, ALL types)
       final todayData = await supabase
           .from('attendance')
           .select('id, subject_id, present, date, time_slot')
@@ -121,18 +126,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       Map<String, String> tempIdMap = {};
       Map<String, List<Map<String, dynamic>>> tempHistory = {};
 
-      /// 🔹 Build FULL history (from overallData)
       for (var a in overallData) {
         final subjectId = a['subject_id']?.toString();
         final timeSlot = a['time_slot'];
         final date = a['date']?.toString();
-
         if (subjectId == null || date == null) continue;
 
         final value = a['present'] ?? 'cancelled';
-
         tempHistory.putIfAbsent(subjectId, () => []);
-
         if (!tempHistory[subjectId]!.any(
           (e) => e['date'] == date && e['time_slot'] == timeSlot,
         )) {
@@ -144,35 +145,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         }
       }
 
-      /// 🔹 TODAY map (for UI buttons)
       for (var a in todayData) {
         final subjectId = a['subject_id']?.toString();
         final attId = a['id']?.toString();
         final timeSlot = a['time_slot'];
-
         if (subjectId == null || attId == null) continue;
 
         final value = a['present'] ?? 'cancelled';
-
         tempMap["$subjectId-$timeSlot"] = value;
         tempIdMap["$subjectId-$timeSlot"] = attId;
       }
 
       setState(() {
-        todaysSubjects = timetable;
+        todaysSubjects = mergedTimetable;
         allSubjects = subjects;
-
         attendanceMap = tempMap;
         attendanceIdMap = tempIdMap;
         subjectAttendanceHistory = tempHistory;
-
         isLoading = false;
       });
     } catch (e) {
+      debugPrint("fetchData error: $e");
       setState(() => isLoading = false);
     }
   }
-  // ================= TOGGLE =================
 
   Future<void> toggleAttendance(
     String subjectId,
@@ -180,11 +176,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     int timeSlot,
   ) async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
     final todayDate = DateTime.now().toIso8601String().split('T')[0];
-
     final key = "$subjectId-$timeSlot";
 
     try {
@@ -202,17 +196,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'time_slot': timeSlot,
         }).select();
 
-        final newId = response[0]['id'].toString();
-
-        attendanceIdMap[key] = newId;
+        attendanceIdMap[key] = response[0]['id'].toString();
       }
 
-      // UPDATE HISTORY LOCALLY
-
       subjectAttendanceHistory.putIfAbsent(subjectId, () => []);
-
       final historyList = subjectAttendanceHistory[subjectId]!;
-
       final existingIndex = historyList.indexWhere(
         (e) => e['date'] == todayDate && e['time_slot'] == timeSlot,
       );
@@ -227,118 +215,325 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         });
       }
 
-      setState(() {
-        attendanceMap[key] = value;
-      });
+      setState(() => attendanceMap[key] = value);
     } catch (e) {
-      debugPrint("Attendance error: $e");
+      debugPrint("Attendance toggle error: $e");
     }
   }
 
-  double calculateMonthlyAttendance() {
-    int attended = 0;
-    int total = 0;
+  // ─── Filtered history helper ───────────────────────────────────────────────
+  List<Map<String, dynamic>> _filteredHistory(String subjectId) {
+    final history = subjectAttendanceHistory[subjectId] ?? [];
+    if (filterStart == null && filterEnd == null) return history;
 
+    return history.where((e) {
+      final date = DateTime.tryParse(e['date'] ?? '');
+      if (date == null) return false;
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      if (filterStart != null && dateOnly.isBefore(filterStart!)) return false;
+      if (filterEnd != null && dateOnly.isAfter(filterEnd!)) return false;
+      return true;
+    }).toList();
+  }
+
+  // ─── Stats (filter-aware) ─────────────────────────────────────────────────
+  double calculateFilteredOverallAttendance() {
+    int attended = 0, total = 0;
+    for (var subject in allSubjects) {
+      if (subject['type'] != 'Theory') continue;
+      final history = _filteredHistory(subject['id'].toString());
+      attended += history.where((v) => v['status'] == 'present').length;
+      total += history.where((v) => v['status'] != 'cancelled').length;
+    }
+    if (total == 0) return 0;
+    return (attended / total) * 100;
+  }
+
+  double calculateFilteredMonthlyAttendance() {
+    if (filterStart != null || filterEnd != null) {
+      return calculateFilteredOverallAttendance();
+    }
+    int attended = 0, total = 0;
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
     for (var subject in allSubjects) {
-      // keep same rule → only theory
       if (subject['type'] != 'Theory') continue;
-
-      final subjectId = subject['id'].toString();
-      final history = subjectAttendanceHistory[subjectId];
-
-      if (history == null) continue;
-
+      final history = subjectAttendanceHistory[subject['id'].toString()] ?? [];
       for (var entry in history) {
-        final entryDate = DateTime.parse(entry['date']);
-
-        if (entryDate.isBefore(startOfMonth) || entryDate.isAfter(endOfMonth))
+        final entryDate = DateTime.tryParse(entry['date'] ?? '');
+        if (entryDate == null) continue;
+        final dateOnly = DateTime(
+          entryDate.year,
+          entryDate.month,
+          entryDate.day,
+        );
+        if (dateOnly.isBefore(startOfMonth) || dateOnly.isAfter(endOfMonth))
           continue;
-
         if (entry['status'] == 'present') attended++;
-
         if (entry['status'] != 'cancelled') total++;
       }
     }
-
     if (total == 0) return 0;
-
     return (attended / total) * 100;
-  }
-
-  // ================= CALCULATIONS =================
-
-  // ================= CALCULATIONS =================
-
-  int getPresent(String subjectId) {
-    final data = subjectAttendanceHistory[subjectId] ?? [];
-
-    return data.where((e) => e['status'] == 'present').length;
-  }
-
-  int getTotal(String subjectId) {
-    final data = subjectAttendanceHistory[subjectId] ?? [];
-
-    return data.where((e) => e['status'] != 'cancelled').length;
-  }
-
-  int getMustAttend(int present, int total, int target) {
-    if (total == 0) return 0;
-
-    double value = (target * total - 100 * present) / (100 - target);
-
-    if (value < 0) return 0;
-
-    return value.ceil();
   }
 
   double calculateSubjectAttendance(String subjectId) {
-    final history = subjectAttendanceHistory[subjectId] ?? [];
-
+    final history = _filteredHistory(subjectId);
     if (history.isEmpty) return 0;
-
     int attended = history.where((v) => v['status'] == 'present').length;
-
     int total = history.where((v) => v['status'] != 'cancelled').length;
-
     if (total == 0) return 0;
-
     return (attended / total) * 100;
   }
 
-  // 🔥 UPDATED FUNCTION
-  double calculateOverallAttendance() {
-    int attended = 0;
-    int total = 0;
+  int getPresent(String subjectId) =>
+      _filteredHistory(subjectId).where((e) => e['status'] == 'present').length;
 
-    for (var subject in allSubjects) {
-      // ✅ Only count THEORY subjects
-      if (subject['type'] != 'Theory') continue;
+  int getTotal(String subjectId) => _filteredHistory(
+    subjectId,
+  ).where((e) => e['status'] != 'cancelled').length;
 
-      final subjectId = subject['id'].toString();
+  int getMustAttend(int present, int total, int target) {
+    if (total == 0) return 0;
+    double value = (target * total - 100 * present) / (100 - target);
+    return value < 0 ? 0 : value.ceil();
+  }
 
-      final history = subjectAttendanceHistory[subjectId];
+  // ─── Pink-themed date range picker ───────────────────────────────────────
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 2),
+      lastDate: now,
+      initialDateRange: filterStart != null && filterEnd != null
+          ? DateTimeRange(start: filterStart!, end: filterEnd!)
+          : null,
+      // ── Pink & Black theme ──────────────────────────────────────────────
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            // Scaffold / dialog background
+            scaffoldBackgroundColor: bgBlack,
+            dialogBackgroundColor: bgBlack,
+            colorScheme: const ColorScheme.dark(
+              // Primary = pink (selected circles, range highlight, buttons)
+              primary: pink,
+              onPrimary: Colors.white,
 
-      if (history == null) continue;
+              // Surface = dark card
+              surface: cardEnd,
+              onSurface: Colors.white,
 
-      attended += history.where((v) => v['status'] == 'present').length;
+              // Secondary / outline
+              secondary: pinkLight,
+              onSecondary: Colors.white,
 
-      total += history.where((v) => v['status'] != 'cancelled').length;
+              // Background
+              background: bgBlack,
+              onBackground: Colors.white,
+
+              // Error
+              error: error,
+              onError: Colors.white,
+
+              // The range selection fill colour
+              primaryContainer: pinkSurface,
+              onPrimaryContainer: pinkLight,
+            ),
+
+            // Header text style
+            textTheme: Theme.of(context).textTheme.apply(
+              bodyColor: textPrimary,
+              displayColor: textPrimary,
+            ),
+
+            // AppBar inside the picker (month header)
+            appBarTheme: const AppBarTheme(
+              backgroundColor: bgBlack,
+              foregroundColor: textPrimary,
+              elevation: 0,
+            ),
+
+            // "CANCEL" / "SAVE" text buttons
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: pink,
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            // Icon colours (nav arrows)
+            iconTheme: const IconThemeData(color: pink),
+
+            // Divider
+            dividerColor: borderColor,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        filterStart = DateTime(
+          picked.start.year,
+          picked.start.month,
+          picked.start.day,
+        );
+        filterEnd = DateTime(picked.end.year, picked.end.month, picked.end.day);
+      });
     }
-
-    if (total == 0) return 0;
-
-    return (attended / total) * 100;
   }
 
-  // ================= ICONS =================
+  void _clearFilter() => setState(() {
+    filterStart = null;
+    filterEnd = null;
+  });
+
+  String _formatDate(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+
+  // ─── Date range filter bar ─────────────────────────────────────────────────
+  Widget _buildDateRangeBar() {
+    final bool isFiltered = filterStart != null && filterEnd != null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isFiltered
+              ? [pinkSurface, const Color(0xFF1A0D14)]
+              : [cardStart, cardEnd],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isFiltered ? pink : borderColor,
+          width: isFiltered ? 1.5 : 1,
+        ),
+        boxShadow: isFiltered
+            ? [
+                BoxShadow(
+                  color: pink.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          // Calendar icon with pink glow when active
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isFiltered ? pink.withOpacity(0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.calendar_month_rounded,
+              color: isFiltered ? pink : textSecondary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Date label
+          Expanded(
+            child: isFiltered
+                ? RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _formatDate(filterStart!),
+                          style: const TextStyle(
+                            color: pinkLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const TextSpan(
+                          text: '  →  ',
+                          style: TextStyle(color: textSecondary, fontSize: 13),
+                        ),
+                        TextSpan(
+                          text: _formatDate(filterEnd!),
+                          style: const TextStyle(
+                            color: pinkLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const Text(
+                    "All time  ·  tap to filter by date",
+                    style: TextStyle(color: textSecondary, fontSize: 13),
+                  ),
+          ),
+
+          // Select / Change button
+          GestureDetector(
+            onTap: _pickDateRange,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [pink, pinkDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: pink.withOpacity(0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                isFiltered ? "Change" : "Select",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ),
+
+          // Clear button (only when filtered)
+          if (isFiltered) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _clearFilter,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: error.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: error.withOpacity(0.4)),
+                ),
+                child: const Icon(Icons.close_rounded, color: error, size: 14),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget attendanceIcons(String subjectId, int timeSlot) {
     final key = "$subjectId-$timeSlot";
-
     final state = attendanceMap[key] ?? 'cancelled';
 
     return Row(
@@ -349,13 +544,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           color: state == 'present' ? success : textSecondary,
           onPressed: () => toggleAttendance(subjectId, 'present', timeSlot),
         ),
-
         IconButton(
           icon: const Icon(Icons.cancel_rounded),
           color: state == 'absent' ? error : textSecondary,
           onPressed: () => toggleAttendance(subjectId, 'absent', timeSlot),
         ),
-
         IconButton(
           icon: const Icon(Icons.block_rounded),
           color: state == 'cancelled' ? warning : textSecondary,
@@ -365,131 +558,212 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  // ================= UI =================
-
   @override
   Widget build(BuildContext context) {
-    final overall = calculateOverallAttendance();
-    final monthly = calculateMonthlyAttendance();
+    final bool isFiltered = filterStart != null && filterEnd != null;
+    final overall = calculateFilteredOverallAttendance();
+    final monthly = calculateFilteredMonthlyAttendance();
 
     return Scaffold(
       backgroundColor: bgBlack,
-
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: success))
+          ? const Center(
+              child: CircularProgressIndicator(color: pink, strokeWidth: 2.5),
+            )
           : Padding(
               padding: const EdgeInsets.all(20),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
-                  Text(
-                    "Overall Attendance: ${overall.toStringAsFixed(1)}%",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
+                  // ── Date range filter bar ──────────────────────────────
+                  _buildDateRangeBar(),
 
-                  Text(
-                    "Monthly Attendance: ${monthly.toStringAsFixed(1)}%",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
+                  // ── Stats header ───────────────────────────────────────
+                  _buildStatRow(
+                    label: isFiltered
+                        ? "Range Attendance"
+                        : "Overall Attendance",
+                    value: "${overall.toStringAsFixed(1)}%",
+                    isPrimary: true,
                   ),
+                  if (!isFiltered) ...[
+                    const SizedBox(height: 4),
+                    _buildStatRow(
+                      label: "Monthly Attendance",
+                      value: "${monthly.toStringAsFixed(1)}%",
+                      isPrimary: false,
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
+                  // ── Subject cards ──────────────────────────────────────
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: todaysSubjects.length,
+                    child: RefreshIndicator(
+                      onRefresh: fetchData,
+                      color: pink,
+                      child: ListView.builder(
+                        itemCount: todaysSubjects.length,
+                        itemBuilder: (context, index) {
+                          final item = todaysSubjects[index];
+                          final subject = item['subjects'];
+                          final subjectId = subject['id'].toString();
+                          final timeSlot = item['time_slot'] as int;
+                          final isOverride = item['is_override'] == true;
 
-                      itemBuilder: (context, index) {
-                        final item = todaysSubjects[index];
+                          final percent = calculateSubjectAttendance(subjectId);
+                          final present = getPresent(subjectId);
+                          final total = getTotal(subjectId);
+                          final mustAttend = getMustAttend(present, total, 75);
 
-                        final subject = item['subjects'];
+                          // Border colour logic
+                          final borderC = isOverride
+                              ? warning
+                              : percent < 75
+                              ? error
+                              : borderColor;
 
-                        final subjectId = subject['id'].toString();
-
-                        final timeSlot = item['time_slot'] as int;
-
-                        final percent = calculateSubjectAttendance(subjectId);
-
-                        final present = getPresent(subjectId);
-
-                        final total = getTotal(subjectId);
-
-                        final mustAttend = getMustAttend(present, total, 75);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-
-                          padding: const EdgeInsets.all(14),
-
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [cardStart, cardEnd],
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [cardStart, cardEnd],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: borderC, width: 1.5),
                             ),
-
-                            borderRadius: BorderRadius.circular(14),
-
-                            border: Border.all(
-                              color: percent < 75 ? error : borderColor,
-                              width: 2,
-                            ),
-                          ),
-
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      "${subject['name']} (${subject['type']})",
-
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: textPrimary,
-                                        fontSize: 16,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              "${subject['name']} (${subject['type']})",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: textPrimary,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                          ),
+                                          if (isOverride) ...[
+                                            const SizedBox(width: 8),
+                                            _pill("Override", warning),
+                                          ],
+                                        ],
                                       ),
                                     ),
-                                  ),
-
-                                  attendanceIcons(subjectId, timeSlot),
-                                ],
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                "Attendance: ${percent.toStringAsFixed(1)}%",
-                                style: const TextStyle(color: textSecondary),
-                              ),
-
-                              const SizedBox(height: 4),
-
-                              Text(
-                                "Must attend next: $mustAttend classes",
-                                style: const TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  color: textSecondary,
+                                    attendanceIcons(subjectId, timeSlot),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                                const SizedBox(height: 6),
+
+                                // Attendance % with pink accent bar
+                                _buildAttendanceBar(percent),
+                                const SizedBox(height: 6),
+
+                                Text(
+                                  isFiltered
+                                      ? "Range: ${percent.toStringAsFixed(1)}%  ·  $present / $total"
+                                      : "Attendance: ${percent.toStringAsFixed(1)}%",
+                                  style: const TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "Must attend next: $mustAttend classes",
+                                  style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+    );
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  Widget _buildStatRow({
+    required String label,
+    required String value,
+    required bool isPrimary,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 20,
+          decoration: BoxDecoration(
+            color: isPrimary ? pink : textSecondary.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          "$label: ",
+          style: TextStyle(
+            fontSize: 15,
+            color: textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: isPrimary ? pinkLight : textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAttendanceBar(double percent) {
+    final Color barColor = percent >= 75 ? pink : error;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: (percent / 100).clamp(0.0, 1.0),
+        minHeight: 5,
+        backgroundColor: borderColor,
+        valueColor: AlwaysStoppedAnimation<Color>(barColor),
+      ),
+    );
+  }
+
+  Widget _pill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
