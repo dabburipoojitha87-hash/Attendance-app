@@ -21,19 +21,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isInsightsLoading = true;
 
   /// 🎨 THEME
-  static const bgBlack = Color(0xFF0E0E11);
-  static const surface = Color(0xFF16161B);
+  static const bgBlack = Color.fromARGB(255, 0, 0, 0);
+  static const surface = Color.fromARGB(255, 0, 0, 0);
 
-  static const gradientStart = Color(0xFF1C1C24);
-  static const gradientEnd = Color(0xFF2A2A36);
+  static const gradientStart = Color.fromARGB(255, 0, 0, 0);
+  static const gradientEnd = Color(0xFF212121);
 
-  static const divider = Color(0xFF2F2F3A);
+  static const divider = Color(0xFF535353);
 
-  static const primaryPink = Color(0xFFF2A7B8);
-  static const accentPink = Color(0xFFE58A9B);
+  static const primary = Color(0xFF1DB954);
+  static const accent = Color(0xFF1DB954);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFB8B8C7);
+  static const textSecondary = Color(0xFFB3B3B3);
 
   @override
   void initState() {
@@ -202,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (isLoading) {
       return const Scaffold(
         backgroundColor: bgBlack,
-        body: Center(child: CircularProgressIndicator(color: primaryPink)),
+        body: Center(child: CircularProgressIndicator(color: primary)),
       );
     }
 
@@ -233,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: primaryPink,
+                    backgroundColor: primary,
                     child: Text(
                       userData!['name'][0].toUpperCase(),
                       style: const TextStyle(
@@ -300,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   if (isInsightsLoading)
                     const Center(
-                      child: CircularProgressIndicator(color: primaryPink),
+                      child: CircularProgressIndicator(color: primary),
                     )
                   else
                     Column(
@@ -313,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const Icon(
                                     Icons.auto_awesome,
                                     size: 16,
-                                    color: accentPink,
+                                    color: accent,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -344,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ElevatedButton(
                 onPressed: goToEdit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryPink,
+                  backgroundColor: primary,
                   foregroundColor: Colors.black,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

@@ -19,21 +19,15 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   bool isLoading = true;
 
-  /// 🌸 SAKURA THEME COLORS
+  /// 🌸 SPOTIFY THEME COLORS
 
-  static const backgroundColor = Color(0xFF0E0E11); // Ink Black
-
-  static const surfaceColor = Color(0xFF16161B); // Charcoal Night
-
-  static const primaryColor = Color(0xFFF2A7B8); // Powdered Sakura Pink
-
-  static const accentColor = Color(0xFFE58A9B); // Soft Rose Pink
-
-  static const textPrimary = Color(0xFFFFFFFF); // White
-
-  static const textSecondary = Color(0xFFB8B8C7); // Dusty Lavender
-
-  static const errorColor = Color(0xFFE57373); // Muted Sakura Red
+  static const backgroundColor = Color.fromARGB(255, 0, 0, 0);
+  static const surfaceColor = Color(0xFF212121);
+  static const primaryColor = Color(0xFF1DB954);
+  static const accentColor = Color(0xFF1DB954);
+  static const textPrimary = Color(0xFFFFFFFF);
+  static const textSecondary = Color(0xFFB3B3B3);
+  static const errorColor = Color(0xFFE57373);
 
   @override
   void initState() {
@@ -43,20 +37,15 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   bool isSameMonth(String dateStr) {
     final date = DateTime.parse(dateStr);
-
     final now = DateTime.now();
-
     return date.month == now.month && date.year == now.year;
   }
 
-  bool isWithinSemester(String dateStr) {
+  /// ✅ Yearly filter for practicals
+  bool isWithinYear(String dateStr) {
     final date = DateTime.parse(dateStr);
-
     final now = DateTime.now();
-
-    final start = DateTime(now.year, now.month - 4, 1);
-
-    return date.isAfter(start);
+    return date.year == now.year;
   }
 
   Future<void> fetchData() async {
@@ -81,9 +70,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
       for (var a in attendanceData) {
         final subjectId = a['subject_id']?.toString();
-
         final date = a['date']?.toString();
-
         final timeSlot = a['time_slot'];
 
         if (subjectId == null || date == null) continue;
@@ -105,9 +92,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
       setState(() {
         subjects = subjectsData;
-
         subjectAttendanceHistory = tempHistory;
-
         isLoading = false;
       });
     } catch (e) {
@@ -115,38 +100,37 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     }
   }
 
-  double calculateAttendance(String subjectId, String type) {
+  /// ✅ CENTRAL FIX: filtered stats (used everywhere)
+  Map<String, int> getFilteredStats(String subjectId, String type) {
     final history = subjectAttendanceHistory[subjectId] ?? [];
 
-    if (history.isEmpty) return 0.0;
+    if (history.isEmpty) {
+      return {'present': 0, 'total': 0};
+    }
 
     List filtered;
 
     if (type == 'Theory') {
       filtered = history.where((v) => isSameMonth(v['date'])).toList();
     } else {
-      filtered = history.where((v) => isWithinSemester(v['date'])).toList();
+      filtered = history.where((v) => isWithinYear(v['date'])).toList();
     }
 
-    int attended = filtered.where((v) => v['status'] == 'present').length;
-
+    int present = filtered.where((v) => v['status'] == 'present').length;
     int total = filtered.where((v) => v['status'] != 'cancelled').length;
+
+    return {'present': present, 'total': total};
+  }
+
+  double calculateAttendance(String subjectId, String type) {
+    final stats = getFilteredStats(subjectId, type);
+
+    int present = stats['present']!;
+    int total = stats['total']!;
 
     if (total == 0) return 0.0;
 
-    return (attended / total) * 100;
-  }
-
-  int getPresent(String subjectId) {
-    final data = subjectAttendanceHistory[subjectId] ?? [];
-
-    return data.where((e) => e['status'] == 'present').length;
-  }
-
-  int getTotal(String subjectId) {
-    final data = subjectAttendanceHistory[subjectId] ?? [];
-
-    return data.where((e) => e['status'] != 'cancelled').length;
+    return (present / total) * 100;
   }
 
   int getMustAttend(int present, int total, int target) {
@@ -166,12 +150,9 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: primaryColor,
-
         child: const Icon(Icons.add),
-
         onPressed: () async {
           await context.push('/add-subject');
-
           fetchData();
         },
       ),
@@ -180,58 +161,44 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-
               itemCount: subjects.length,
-
               itemBuilder: (context, index) {
                 final subject = subjects[index];
 
                 final subjectId = subject['id'].toString();
-
                 final type = subject['type'] ?? 'Theory';
-
                 final target = subject['target'] ?? 75;
 
                 final percent = calculateAttendance(subjectId, type);
 
-                final present = getPresent(subjectId);
-
-                final total = getTotal(subjectId);
-
+                /// ✅ FIXED: use filtered stats instead of full history
+                final stats = getFilteredStats(subjectId, type);
+                final present = stats['present']!;
+                final total = stats['total']!;
                 final mustAttend = getMustAttend(present, total, target);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 18),
-
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-
                     children: [
                       /// SUBJECT + %
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                         children: [
                           Text(
                             subject['name'],
-
                             style: TextStyle(
                               fontSize: 18,
-
                               fontWeight: FontWeight.bold,
-
                               color: percent < 75 ? errorColor : textPrimary,
                             ),
                           ),
-
                           Text(
                             "${percent.toStringAsFixed(1)}%",
-
                             style: TextStyle(
                               fontSize: 16,
-
                               fontWeight: FontWeight.bold,
-
                               color: percent < 75 ? errorColor : primaryColor,
                             ),
                           ),
@@ -243,10 +210,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       /// MUST ATTEND
                       Text(
                         "Must attend: $mustAttend",
-
                         style: const TextStyle(
                           fontStyle: FontStyle.italic,
-
                           color: textSecondary,
                         ),
                       ),

@@ -14,14 +14,14 @@ class _BunkCalculatorScreenState extends State<BunkCalculatorScreen> {
 
   // ================= THEME =================
 
-  static const bgBlack = Color(0xFF0E0E11);
-  static const cardStart = Color(0xFF1C1C24);
-  static const cardEnd = Color(0xFF2A2A36);
-  static const borderColor = Color(0xFF2F2F3A);
+  static const bgBlack = Color.fromARGB(255, 0, 0, 0);
+  static const cardStart = Color.fromARGB(255, 0, 0, 0);
+  static const cardEnd = Color.fromARGB(255, 0, 0, 0);
+  static const borderColor = Color.fromARGB(255, 0, 0, 0);
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFB8B8C7);
-  static const success = Color(0xFF7BD3A8);
-  static const warning = Color(0xFFF4C06A);
+  static const textSecondary = Color(0xFFB3B3B3);
+  static const success = Color(0xFF1DB954);
+  static const warning = Color.fromARGB(255, 255, 158, 1);
   static const errorColor = Color(0xFFE57373);
 
   // ================= STATE =================

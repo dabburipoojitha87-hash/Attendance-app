@@ -32,19 +32,19 @@ class _AddTimetableScreenState extends State<AddTimetableScreen> {
   final slots = [1, 2, 3, 4, 5, 6];
 
   /// 🎨 THEME COLORS
-  static const bgBlack = Color(0xFF0E0E11);
-  static const surface = Color(0xFF16161B);
+  static const bgBlack = Color.fromARGB(255, 0, 0, 0);
+  static const surface = Color(0xFF212121);
 
-  static const gradientStart = Color(0xFF1C1C24);
-  static const gradientEnd = Color(0xFF2A2A36);
+  static const gradientStart = Color(0xFF212121);
+  static const gradientEnd = Color(0xFF212121);
 
-  static const divider = Color(0xFF2F2F3A);
+  static const divider = Color(0xFF535353);
 
-  static const primaryPink = Color(0xFFF2A7B8);
-  static const accentPink = Color(0xFFE58A9B);
+  static const primaryPink = Color(0xFF1DB954);
+  static const accentPink = Color(0xFF1DB954);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFB8B8C7);
+  static const textSecondary = Color(0xFFB3B3B3);
 
   @override
   void initState() {
@@ -158,7 +158,7 @@ class _AddTimetableScreenState extends State<AddTimetableScreen> {
 
       appBar: AppBar(
         title: const Text("Add Timetable"),
-        backgroundColor: surface,
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         foregroundColor: textPrimary,
         elevation: 0,
       ),

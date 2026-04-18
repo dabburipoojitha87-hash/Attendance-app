@@ -25,23 +25,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime? filterStart;
   DateTime? filterEnd;
 
-  // ─── Color Palette (Pink & Black theme) ───────────────────────────────────
-  static const bgBlack = Color(0xFF0A0A0D);
-  static const cardStart = Color(0xFF141418);
-  static const cardEnd = Color(0xFF1E1E25);
-  static const borderColor = Color(0xFF2A2A35);
+  // ─── Color Palette (Spotify theme) ────────────────────────────────────────
+  static const bgBlack = Color.fromARGB(255, 0, 0, 0);
+  static const cardStart = Color.fromARGB(255, 0, 0, 0);
+  static const cardEnd = Color.fromARGB(255, 0, 0, 0);
+  static const borderColor = Color.fromARGB(255, 0, 0, 0);
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFAAAAAB);
+  static const textSecondary = Color(0xFFB3B3B3);
 
-  // Pink accent (primary)
-  static const pink = Color(0xFFFF2D78);
-  static const pinkLight = Color(0xFFFF6BA0);
-  static const pinkDark = Color(0xFFBF1A55);
-  static const pinkSurface = Color(0xFF2A0F1A);
+  // Green accent (primary)
+  static const pink = Color(0xFF1DB954);
+  static const pinkLight = Color(0xFF1DB954);
+  static const pinkDark = Color(0xFF1DB954);
+  static const pinkSurface = Color.fromARGB(255, 0, 0, 0);
 
   // Status colours
-  static const success = Color(0xFF7BD3A8);
-  static const warning = Color(0xFFF4C06A);
+  static const success = Color(0xFF1DB954);
+  static const warning = Color.fromARGB(255, 248, 153, 1);
   static const error = Color(0xFFE57373);
 
   @override

@@ -115,10 +115,11 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         title: const Text("AI Assistant"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: const Color(0xFF212121),
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -142,11 +143,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isUser
-                              ? Colors.blue.shade100
-                              : Colors.grey.shade300,
+                              ? const Color(0xFF1DB954)
+                              : const Color(0xFF212121),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(msg["text"] ?? "Empty response"),
+                        child: Text(
+                          msg["text"] ?? "Empty response",
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
 
                       // Suggestions
@@ -156,8 +160,11 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: (msg["suggestions"] as List)
                               .map(
                                 (s) => Chip(
-                                  label: Text(s.toString()),
-                                  backgroundColor: Colors.blue.shade50,
+                                  label: Text(
+                                    s.toString(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  backgroundColor: const Color(0xFF1DB954),
                                 ),
                               )
                               .toList(),
@@ -182,16 +189,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: controller,
+                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: "Ask about attendance...",
+                      hintStyle: const TextStyle(color: Color(0xFFB3B3B3)),
+                      filled: true,
+                      fillColor: const Color(0xFF212121),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: const Icon(Icons.send, color: Color(0xFF1DB954)),
                   onPressed: sendMessage,
                 ),
               ],

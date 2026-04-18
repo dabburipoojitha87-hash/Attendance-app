@@ -20,13 +20,13 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
   String selectedType = 'Theory';
 
   /// 🎨 THEME COLORS
-  static const Color primary = Color(0xFFF2A7B8);
-  static const Color accent = Color(0xFFE58A9B);
-  static const Color background = Color(0xFF0E0E11);
-  static const Color surface = Color(0xFF16161B);
-  static const Color border = Color(0xFF2F2F3A);
+  static const Color primary = Color(0xFF1DB954);
+  static const Color accent = Color(0xFF1DB954);
+  static const Color background = Color.fromARGB(255, 0, 0, 0);
+  static const Color surface = Color(0xFF212121);
+  static const Color border = Color(0xFF535353);
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB8B8C7);
+  static const Color textSecondary = Color(0xFFB3B3B3);
   static const Color error = Color(0xFFE57373);
 
   /// ADD SUBJECT LOGIC (UNCHANGED)
@@ -104,14 +104,11 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
       backgroundColor: background,
 
       appBar: AppBar(
-        title: const Text(
-          "Add Subject",
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
-        ),
+        title: const Text("Add Subject", style: TextStyle(letterSpacing: 1.2)),
 
         backgroundColor: background,
 
-        foregroundColor: primary,
+        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
 
         elevation: 0,
       ),

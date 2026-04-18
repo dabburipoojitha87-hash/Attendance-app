@@ -24,22 +24,22 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   DateTimeRange? selectedRange;
 
   // ── Theme ──────────────────────────────────────────────────────────────────
-  static const Color primary = Color(0xFFF2A7B8);
-  static const Color accent = Color(0xFFE58A9B);
-  static const Color background = Color(0xFF0E0E11);
-  static const Color surface = Color(0xFF16161B);
-  static const Color cardStart = Color(0xFF1C1C24);
-  static const Color cardEnd = Color(0xFF2A2A36);
-  static const Color borderColor = Color(0xFF2F2F3A);
+  static const Color primary = Color(0xFF1DB954);
+  static const Color accent = Color(0xFF1DB954);
+  static const Color background = Color.fromARGB(255, 0, 0, 0);
+  static const Color surface = Color.fromARGB(255, 0, 0, 0);
+  static const Color cardStart = Color.fromARGB(255, 5, 5, 5);
+  static const Color cardEnd = Color.fromARGB(255, 0, 0, 0);
+  static const Color borderColor = Color.fromARGB(255, 0, 0, 0);
 
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB8B8C7);
+  static const Color textSecondary = Color(0xFFB3B3B3);
 
-  static const Color success = Color(0xFF7BD3A8);
-  static const Color warning = Color(0xFFF4C06A);
+  static const Color success = Color(0xFF1DB954);
+  static const Color warning = Color.fromARGB(255, 248, 153, 1);
   static const Color error = Color(0xFFE57373);
-  static const Color info = Color(0xFF89B4FA);
-  static const Color holiday = Color(0xFFCE93D8);
+  static const Color info = Color.fromARGB(255, 0, 98, 255);
+  static const Color holiday = Color.fromARGB(255, 255, 122, 231);
 
   // ── Indian Public Holidays (2024, 2025 & 2026) ────────────────────────────
   static final Map<DateTime, String> indianHolidays = {
@@ -179,196 +179,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       monthlyAttendance[monthKey(month)] ?? 0;
 
   // ── Open Themed Date Range Picker ─────────────────────────────────────────
-  Future<void> _openDateRangePicker() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime(2030),
-      initialDateRange: selectedRange,
-      helpText: 'SELECT RANGE',
-      saveText: 'SAVE',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            // ── Scaffold / Dialog background ────────────────────────────
-            scaffoldBackgroundColor: background,
-            dialogBackgroundColor: background,
-
-            colorScheme: ColorScheme.dark(
-              primary: accent,
-              onPrimary: Colors.white,
-              surface: surface,
-              onSurface: textPrimary,
-              background: background,
-              onBackground: textPrimary,
-              secondary: accent,
-              onSecondary: Colors.white,
-              error: error,
-              onError: Colors.white,
-              outline: borderColor,
-              surfaceVariant: cardStart,
-              onSurfaceVariant: textSecondary,
-              primaryContainer: accent.withOpacity(0.18),
-              onPrimaryContainer: accent,
-            ),
-
-            // ── AppBar (top header of picker) ───────────────────────────
-            appBarTheme: const AppBarTheme(
-              backgroundColor: surface,
-              foregroundColor: textPrimary,
-              elevation: 0,
-              centerTitle: false,
-              iconTheme: IconThemeData(color: textSecondary),
-              actionsIconTheme: IconThemeData(color: accent),
-              titleTextStyle: TextStyle(
-                color: textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-
-            // ── Text ────────────────────────────────────────────────────
-            textTheme: const TextTheme(
-              bodyLarge: TextStyle(color: textPrimary),
-              bodyMedium: TextStyle(color: textPrimary),
-              bodySmall: TextStyle(color: textSecondary),
-              labelLarge: TextStyle(
-                color: textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-              labelMedium: TextStyle(color: textSecondary),
-              labelSmall: TextStyle(color: textSecondary),
-              titleMedium: TextStyle(
-                color: textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-              titleSmall: TextStyle(color: textSecondary),
-              titleLarge: TextStyle(
-                color: textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-              headlineSmall: TextStyle(
-                color: textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-              headlineMedium: TextStyle(
-                color: textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            // ── Divider ─────────────────────────────────────────────────
-            dividerColor: borderColor,
-            dividerTheme: const DividerThemeData(
-              color: borderColor,
-              thickness: 0.5,
-            ),
-
-            // ── Input fields (Start Date – End Date) ─────────────────────
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: cardStart,
-              hintStyle: const TextStyle(color: textSecondary, fontSize: 14),
-              labelStyle: const TextStyle(color: textSecondary, fontSize: 13),
-              prefixIconColor: textSecondary,
-              suffixIconColor: accent,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: accent, width: 1.5),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: error),
-              ),
-            ),
-
-            // ── Buttons ──────────────────────────────────────────────────
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: accent,
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            outlinedButtonTheme: OutlinedButtonThemeData(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: accent,
-                side: const BorderSide(color: accent),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            iconButtonTheme: IconButtonThemeData(
-              style: IconButton.styleFrom(foregroundColor: textSecondary),
-            ),
-
-            // ── Icon ─────────────────────────────────────────────────────
-            iconTheme: const IconThemeData(color: textSecondary, size: 20),
-
-            // ── Card / Dialog ─────────────────────────────────────────────
-            cardTheme: CardThemeData(
-              // ✅ FIXED
-              color: surface,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: borderColor, width: 1),
-              ),
-            ),
-            dialogTheme: DialogThemeData(
-              // ✅ FIXED
-              backgroundColor: background,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 0,
-            ),
-
-            // ── Chip (used for year/mode chips in some pickers) ───────────
-            chipTheme: ChipThemeData(
-              backgroundColor: cardStart,
-              selectedColor: accent.withOpacity(0.2),
-              labelStyle: const TextStyle(color: textPrimary),
-              secondaryLabelStyle: const TextStyle(color: accent),
-              side: const BorderSide(color: borderColor),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() => selectedRange = picked);
-      // TODO: use selectedRange.start and selectedRange.end as needed
-    }
-  }
-
   // ── Legend row ─────────────────────────────────────────────────────────────
   Widget _legendDot(Color color, String label) => Row(
     children: [
@@ -499,40 +309,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           "Attendance Calendar",
           style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          // ── Date Range Picker button ──────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: _openDateRangePicker,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: accent.withOpacity(0.4), width: 1),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.date_range_rounded, color: accent, size: 15),
-                    SizedBox(width: 5),
-                    Text(
-                      "Range",
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: primary))

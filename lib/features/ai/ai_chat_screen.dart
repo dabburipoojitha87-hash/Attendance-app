@@ -126,10 +126,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
       appBar: AppBar(
         title: const Text("AI Assistant"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -150,14 +151,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isUser ? Colors.blue : Colors.grey.shade300,
+                      color: isUser
+                          ? const Color(0xFF1DB954)
+                          : const Color(0xFF212121),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       isUser ? msg["user"]! : msg["bot"]!,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : Colors.black,
-                      ),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 );
@@ -173,14 +174,21 @@ class _AIChatScreenState extends State<AIChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: controller,
+                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       hintText: "Ask something...",
-                      border: OutlineInputBorder(),
+                      hintStyle: TextStyle(color: Color(0xFFB3B3B3)),
+                      filled: true,
+                      fillColor: Color.fromARGB(255, 0, 0, 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: const Icon(Icons.send, color: Color(0xFF1DB954)),
                   onPressed: sendMessage,
                 ),
               ],

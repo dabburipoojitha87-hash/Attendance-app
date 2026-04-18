@@ -28,8 +28,12 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       title: 'Echo Attendance',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
+        primaryColor: const Color(0xFF1DB954),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF1DB954),
+          surface: Color(0xFF121212),
+        ),
       ),
       routerConfig: router,
     );
